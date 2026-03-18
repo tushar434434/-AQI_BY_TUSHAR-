@@ -1,0 +1,18 @@
+node_modules/
+.env
+.DS_Store
+
+# SQLite
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+sqlite3.def
+sqlite3.dll
+sqlite3.exp
+sqlite3.lib
+database.sqlite
+
+# Build outputs
+client/dist
+client/dist-ssr
