@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { GitCompare, MapPin, X, Plus, Search } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Compare = () => {
   const [cities, setCities] = useState([]);
   const [searchInput, setSearchInput] = useState('');
@@ -22,7 +24,7 @@ const Compare = () => {
         const cityName = display_name.split(',')[0];
         
         // 2. Fetch AQI
-        const aqiRes = await axios.get(`http://localhost:5000/api/aqi?lat=${lat}&lon=${lon}`);
+        const aqiRes = await axios.get(`${API_URL}/api/aqi?lat=${lat}&lon=${lon}`);
         if(aqiRes.data.list && aqiRes.data.list.length > 0) {
           const aqiData = aqiRes.data.list[0];
           setCities(prev => [...prev, { name: cityName, data: aqiData }]);

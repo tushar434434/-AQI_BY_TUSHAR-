@@ -5,6 +5,8 @@ import { LayoutDashboard, MapPin, Trash2, Heart } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -33,14 +35,14 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchSavedCities = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/cities', {
+        const res = await axios.get(`${API_URL}/api/cities`, {
           headers: { Authorization: `Bearer ${user.token}` }
         });
         
         // Fetch real-time AQI for each saved city
         const citiesWithAqi = await Promise.all(res.data.map(async (city) => {
           try {
-            const aqiRes = await axios.get(`http://localhost:5000/api/aqi?lat=${city.lat}&lon=${city.lon}`);
+            const aqiRes = await axios.get(`${API_URL}/api/aqi?lat=${city.lat}&lon=${city.lon}`);
             return { ...city, aqiData: aqiRes.data.list[0] };
           } catch (e) {
             return { ...city, aqiData: null };
@@ -60,7 +62,7 @@ const Dashboard = () => {
 
   const removeCity = async (cityName) => {
     try {
-      await axios.delete(`http://localhost:5000/api/cities/${cityName}`, {
+      await axios.delete(`${API_URL}/api/cities/${cityName}`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       setSavedCities(prev => prev.filter(c => c.city_name !== cityName));

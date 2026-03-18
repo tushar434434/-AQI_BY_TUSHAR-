@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send } from 'lucide-react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -21,7 +23,7 @@ const Chatbot = () => {
     setIsLoading(true);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/chat', { message: userMessage.text });
+      const res = await axios.post(`${API_URL}/api/chat`, { message: userMessage.text });
       const botMessage = { text: res.data.reply, sender: 'bot' };
       setMessages(prev => [...prev, botMessage]);
     } catch (err) {

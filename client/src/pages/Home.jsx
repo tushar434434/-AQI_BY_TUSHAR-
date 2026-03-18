@@ -8,6 +8,8 @@ import { Search, Heart, MapPin, Navigation, Volume2 } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 // Fix for default marker icons in React-Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -37,7 +39,7 @@ const MapComponent = () => {
   const fetchAqi = async (lat, lon) => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/aqi?lat=${lat}&lon=${lon}`);
+      const res = await axios.get(`${API_URL}/api/aqi?lat=${lat}&lon=${lon}`);
       if(res.data.list && res.data.list.length > 0) {
         setAqiData(res.data.list[0]);
       }
@@ -96,7 +98,7 @@ const MapComponent = () => {
         const globalData = [];
         await Promise.all(Object.entries(globalCoordinates).map(async ([name, coords]) => {
             try {
-              const res = await axios.get(`http://localhost:5000/api/aqi?lat=${coords.lat}&lon=${coords.lon}`);
+              const res = await axios.get(`${API_URL}/api/aqi?lat=${coords.lat}&lon=${coords.lon}`);
               if(res.data.list && res.data.list.length > 0) {
                 globalData.push({ name, aqi: res.data.list[0].main.aqi, lat: coords.lat, lon: coords.lon });
               }
@@ -131,7 +133,7 @@ const MapComponent = () => {
         // 2) Get AQI for this exact location to save in recent
         let fetchedAqi = null;
         try {
-          const aqiRes = await axios.get(`http://localhost:5000/api/aqi?lat=${lat}&lon=${lon}`);
+          const aqiRes = await axios.get(`${API_URL}/api/aqi?lat=${lat}&lon=${lon}`);
           if(aqiRes.data.list && aqiRes.data.list.length > 0) {
             fetchedAqi = aqiRes.data.list[0].main.aqi;
           }
@@ -161,7 +163,7 @@ const MapComponent = () => {
     }
 
     try {
-      await axios.post('http://localhost:5000/api/cities/save', {
+      await axios.post(`${API_URL}/api/cities/save`, {
         city_name: searchedCity,
         lat: position[0],
         lon: position[1]

@@ -1,0 +1,29 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: aqi-backend
+    env: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: OPENWEATHER_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+
+  # Frontend Static Site
+  - type: web
+    name: aqi-frontend
+    env: static
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: aqi-backend
+          envVarKey: RENDER_EXTERNAL_URL
