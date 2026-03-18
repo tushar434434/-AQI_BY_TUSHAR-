@@ -19,9 +19,9 @@ const Fallback = () => (
 
 const AppRoutes = () => {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col relative">
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative w-full overflow-x-hidden">
       <Navbar />
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20 mb-12">
         <Suspense fallback={<Fallback />}>
           <Routes>
             <Route path="/" element={<Home />} />

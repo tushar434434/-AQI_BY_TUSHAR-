@@ -35,13 +35,10 @@ const Navbar = () => {
   };
 
   return (
-    <motion.header 
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-7xl h-16 rounded-2xl border bg-background/60 backdrop-blur-xl shadow-sm supports-[backdrop-filter]:bg-background/60"
+    <header 
+      className="fixed top-0 left-0 z-50 w-full h-16 border-b bg-background/80 backdrop-blur-md shadow-sm supports-[backdrop-filter]:bg-background/60"
     >
-      <nav className="flex items-center justify-between h-full px-4 md:px-6">
+      <nav className="flex items-center justify-between h-full w-full max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
             <div className="bg-gradient-to-tr from-emerald-500 to-blue-500 p-1.5 rounded-lg">
@@ -96,7 +93,7 @@ const Navbar = () => {
           )}
         </div>
       </nav>
-    </motion.header>
+    </header>
   );
 };
 

@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip as MapTooltip, useMap, LayersControl, useMapEvents } from 'react-leaflet';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Tooltip as MapTooltip, useMap, LayersControl, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import Chatbot from '../components/Chatbot';
-import { Search, Heart, MapPin, Navigation, Volume2, Flame, Leaf } from 'lucide-react';
+import { Search, Heart, MapPin, Navigation, Volume2, Flame, Leaf, Wind } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { searchCity, reverseGeocode, getAqiByCoords, saveCity } from '../services/api';
 import { useDebounce } from '../hooks/useDebounce';
-import { useTheme } from '../components/ThemeProvider';
 
 // Fix for default marker icons in React-Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -36,13 +35,10 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   
-  const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  const markerRef = useRef(null);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { theme } = useTheme();
 
   // 1. Fetch AQI whenever position changes
   useEffect(() => {
@@ -61,11 +57,6 @@ const Home = () => {
     };
     fetchAqi();
   }, [position]);
-
-  // Open Popup automatically when AQI Data loads
-  useEffect(() => {
-    if (markerRef.current) markerRef.current.openPopup();
-  }, [aqiData]);
 
   // 2. Fetch Global Top/Low Cities on Mount
   useEffect(() => {
@@ -169,6 +160,7 @@ const Home = () => {
     } catch (err) {}
   };
 
+  // Leaflet Helpers //
   const RecenterMap = ({ lat, lon }) => {
     const map = useMap();
     useEffect(() => {
@@ -223,15 +215,82 @@ const Home = () => {
           <div style="border-top-color:${aqiInfo.color}" class="w-0 h-0 border-l-[6px] border-r-[6px] border-l-transparent border-r-transparent border-t-[8px] -mt-0.5 filter drop-shadow-sm"></div>
         </div>
       `,
-      iconSize: [50, 50], iconAnchor: [25, 45], popupAnchor: [0, -45], tooltipAnchor: [20, -25]
+      iconSize: [50, 50], iconAnchor: [25, 45], tooltipAnchor: [20, -25]
     });
+  };
+
+  // Render Information Panel (Pulled out of Map Popup)
+  const InfoPanel = () => {
+    if (loading) return (
+      <div className="w-full h-full border bg-card rounded-3xl p-6 shadow-sm flex items-center justify-center animate-pulse">
+        <Wind className="text-muted opacity-50 w-12 h-12" />
+      </div>
+    );
+    
+    if (!aqiData) return (
+      <div className="w-full h-full border bg-card rounded-3xl p-6 shadow-sm flex items-center justify-center text-muted-foreground text-center">
+        Data unavailable for this location. Try dragging the pin!
+      </div>
+    );
+
+    const epaAqi = aqiData.main.aqi;
+    const aqiInfo = getAqiInfo(epaAqi);
+
+    return (
+      <div className="w-full h-full border bg-card text-card-foreground rounded-3xl p-6 md:p-8 shadow-sm flex flex-col justify-between">
+        <div>
+          <div className="flex justify-between items-start mb-6">
+            <h2 className="text-2xl font-bold flex flex-col gap-1 tracking-tight">
+              <span className="text-muted-foreground text-sm font-medium uppercase tracking-widest flex items-center gap-1.5 opacity-80">
+                <MapPin size={16} /> Selected Location
+              </span>
+              <span className={aqiInfo.textClass}>{searchedCity}</span>
+            </h2>
+            <div className={`${aqiInfo.bgClass} text-white px-4 py-2 rounded-2xl text-lg font-black shadow-sm`}>
+              AQI {epaAqi}
+            </div>
+          </div>
+          
+          <div className="border-l-4 pl-4 py-1 mb-8" style={{ borderLeftColor: aqiInfo.color }}>
+            <div className="text-sm text-muted-foreground font-semibold flex gap-2 items-start leading-relaxed text-balance">
+              <span>{aqiInfo.health}</span>
+              <button 
+                 onClick={() => speakAqi(searchedCity, epaAqi, aqiInfo.health)} 
+                 className="text-primary hover:bg-primary/20 bg-primary/10 p-2 rounded-full shrink-0 transition-colors"
+                 title="Listen to Air Quality Advisory"
+              >
+                <Volume2 size={16} />
+              </button>
+            </div>
+          </div>
+
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Pollutant Breakdown (μg/m³)</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-4">
+            {['pm2_5', 'pm10', 'o3', 'no2'].map(p => (
+              <div key={p} className="bg-muted/50 border p-3 rounded-2xl text-center flex flex-col justify-center">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{p.replace('_','.')}</span>
+                <span className="font-bold text-lg md:text-xl lg:text-lg">{aqiData.components[p]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button 
+          onClick={handleSaveCity}
+          className={`mt-8 w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all ${isSaved ? 'bg-secondary text-foreground border-transparent' : 'bg-primary text-primary-foreground shadow-sm hover:opacity-90'}`}
+        >
+          <Heart className={isSaved ? "text-destructive fill-destructive" : ""} size={18} />
+          {isSaved ? 'Saved to your Dashboard' : 'Like & Save City Tracking'}
+        </button>
+      </div>
+    );
   };
 
   return (
     <div className="w-full flex flex-col gap-6">
 
       {/* Autocomplete Search Bar */}
-      <div className="w-full max-w-2xl mx-auto relative z-[1001]">
+      <div className="w-full max-w-3xl mx-auto relative z-[1001]">
         <div className="bg-background/80 backdrop-blur-xl border shadow-sm rounded-2xl flex items-center px-4 overflow-visible group focus-within:ring-2 focus-within:ring-primary transition-all">
           <form onSubmit={handleManualSearch} className="flex items-center w-full h-14">
             <Search className="text-muted-foreground mr-3" size={20} />
@@ -298,88 +357,65 @@ const Home = () => {
         </AnimatePresence>
       </div>
 
-      <div 
-        className="w-full h-[60vh] min-h-[500px] rounded-3xl overflow-hidden border shadow-sm relative z-0"
-        onMouseLeave={() => setShowSearchDropdown(false)}
-      >
-        <button 
-          onClick={() => { setPosition([28.6139, 77.2090]); setSearchedCity('Delhi'); setIsSaved(false); }}
-          className="absolute bottom-6 left-6 z-[1000] bg-background/90 backdrop-blur-md border px-4 py-2.5 rounded-xl font-medium shadow-md flex items-center gap-2 hover:bg-muted transition-colors"
+      {/* Grid Layout Layout: Map + Data Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Side: Leaflet Map Container (2 Columns on large screens) */}
+        <div 
+          className="w-full h-[55vh] lg:h-[650px] min-h-[400px] rounded-3xl overflow-hidden border shadow-sm relative z-0 lg:col-span-2"
+          onMouseLeave={() => setShowSearchDropdown(false)}
         >
-          <Navigation size={18} /> Default View
-        </button>
+          <button 
+            onClick={() => { setPosition([28.6139, 77.2090]); setSearchedCity('Delhi'); setIsSaved(false); }}
+            className="absolute bottom-6 left-6 z-[1000] bg-background/90 backdrop-blur-md border px-4 py-2.5 rounded-xl text-sm font-semibold shadow-md flex items-center gap-2 hover:bg-muted transition-colors"
+          >
+            <Navigation size={16} /> Reset Default Map
+          </button>
 
-        <MapContainer center={position} zoom={11} doubleClickZoom={false} className="w-full h-full">
-          <LayersControl position="topright">
-            <LayersControl.BaseLayer checked={theme !== 'dark'} name="Light Theme">
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution='&copy; CartoDB' />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer checked={theme === 'dark'} name="Dark Theme">
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='&copy; CartoDB' />
-            </LayersControl.BaseLayer>
-          </LayersControl>
+          <MapContainer center={position} zoom={11} doubleClickZoom={false} className="w-full h-full">
+            <LayersControl position="topright">
+              <LayersControl.BaseLayer checked name="Street Map (OSM)">
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' />
+              </LayersControl.BaseLayer>
+              <LayersControl.BaseLayer name="Satellite view">
+                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='&copy; Esri' />
+              </LayersControl.BaseLayer>
+              <LayersControl.BaseLayer name="Terrain / Topo">
+                <TileLayer url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" attribution='&copy; OpenTopoMap' />
+              </LayersControl.BaseLayer>
+              <LayersControl.BaseLayer name="Dark Map">
+                <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='&copy; CartoDB' />
+              </LayersControl.BaseLayer>
+            </LayersControl>
 
-          <RecenterMap lat={position[0]} lon={position[1]} />
-          <MapDoubleClickEvent />
+            <RecenterMap lat={position[0]} lon={position[1]} />
+            <MapDoubleClickEvent />
 
-          {aqiData && (
-            <Marker 
-              position={position} draggable={true} 
-              icon={createCustomIcon(aqiData.main.aqi)} 
-              eventHandlers={{ dragend: onMarkerDragEnd }}
-              ref={r => { markerRef.current = r; if(r) setTimeout(()=>r.openPopup(), 100); }}
-            >
-              <MapTooltip direction="right" offset={[15, -20]} opacity={1} className="sm:hidden lg:block bg-background border rounded-xl text-foreground !p-2 !shadow-lg">
-                <span className="font-semibold text-sm">Hover Info: {searchedCity} AQI {aqiData.main.aqi}</span>
-              </MapTooltip>
+            {aqiData && (
+              <Marker 
+                position={position} draggable={true} 
+                icon={createCustomIcon(aqiData.main.aqi)} 
+                eventHandlers={{ dragend: onMarkerDragEnd }}
+              >
+                <MapTooltip direction="right" offset={[15, -20]} opacity={1} className="bg-background border rounded-xl text-foreground font-sans !p-2 !shadow-lg">
+                  <span className="font-semibold text-sm">Drag to scan other areas!</span>
+                </MapTooltip>
+              </Marker>
+            )}
+          </MapContainer>
+        </div>
 
-              <Popup className="glass-popup" closeButton={false} autoPan={true}>
-                {(() => {
-                  const epaAqi = aqiData.main.aqi;
-                  const aqiInfo = getAqiInfo(epaAqi);
-                  return (
-                    <div className="p-1 w-[260px] flex flex-col gap-3 font-sans">
-                      <div className="flex justify-between items-start">
-                        <h3 className="m-0 text-lg font-bold flex items-center gap-1.5"><MapPin size={18} className={aqiInfo.textClass}/> {searchedCity}</h3>
-                        <div className={`${aqiInfo.bgClass} text-white px-2 py-1 rounded-lg text-xs font-black`}>AQI {epaAqi}</div>
-                      </div>
-                      
-                      <div className="text-xs text-muted-foreground font-medium flex gap-2 items-start leading-relaxed">
-                        <span>{aqiInfo.health}</span>
-                        <button onClick={() => speakAqi(searchedCity, epaAqi, aqiInfo.health)} className="text-primary hover:bg-primary/10 p-1.5 rounded-full shrink-0 transition-colors">
-                          <Volume2 size={16} />
-                        </button>
-                      </div>
+        {/* Right Side: Data Card Panel (1 Column on large screens) */}
+        <div className="lg:col-span-1 h-full min-h-[400px]">
+          <InfoPanel />
+        </div>
 
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {['pm2_5', 'pm10', 'o3', 'no2'].map(p => (
-                          <div key={p} className="bg-muted p-2 rounded-lg text-center flex flex-col justify-center">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase">{p.replace('_','.')}</span>
-                            <span className="font-semibold text-sm">{aqiData.components[p]}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <button 
-                        onClick={handleSaveCity}
-                        className={`mt-2 w-full py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${isSaved ? 'bg-secondary text-foreground border-transparent' : 'bg-primary text-primary-foreground shadow-sm hover:opacity-90'}`}
-                      >
-                        <Heart className={isSaved ? "text-destructive fill-destructive" : ""} size={16} />
-                        {isSaved ? 'Saved to Dashboard' : 'Like & Save City'}
-                      </button>
-                    </div>
-                  );
-                })()}
-              </Popup>
-            </Marker>
-          )}
-        </MapContainer>
       </div>
 
       {/* Global Highlights */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
         
-        <div className="border bg-card text-card-foreground rounded-2xl p-6 shadow-sm">
+        <div className="border bg-card text-card-foreground rounded-3xl p-6 shadow-sm">
           <h3 className="flex items-center gap-2 text-rose-600 font-bold mb-5 tracking-tight text-lg">
             <Flame className="animate-pulse" /> Most Polluted Highlights
           </h3>
@@ -389,9 +425,10 @@ const Home = () => {
                 const aInfo = getAqiInfo(c.aqi);
                 return (
                   <div key={i} onClick={() => { setPosition([c.lat, c.lon]); setSearchedCity(c.name); window.scrollTo(0,0); }} 
-                    className={`flex justify-between items-center bg-muted/50 hover:bg-muted cursor-pointer p-3 rounded-xl border-l-4 ${aInfo.border || 'border-l-'+aInfo.bgClass.replace('bg-','')} transition-colors`}
+                    className={`flex justify-between items-center bg-muted/50 hover:bg-muted cursor-pointer p-4 rounded-2xl border-l-4 transition-colors`}
+                    style={{ borderLeftColor: aInfo.color }}
                   >
-                    <span className="font-semibold">{c.name}</span>
+                    <span className="font-semibold text-base">{c.name}</span>
                     <span className={`${aInfo.bgClass} text-white px-3 py-1 text-xs font-bold rounded-full`}>AQI {c.aqi}</span>
                   </div>
                 );
@@ -400,7 +437,7 @@ const Home = () => {
           </div>
         </div>
 
-        <div className="border bg-card text-card-foreground rounded-2xl p-6 shadow-sm">
+        <div className="border bg-card text-card-foreground rounded-3xl p-6 shadow-sm">
           <h3 className="flex items-center gap-2 text-emerald-500 font-bold mb-5 tracking-tight text-lg">
             <Leaf /> Cleanest Air Highlights
           </h3>
@@ -410,9 +447,10 @@ const Home = () => {
                 const aInfo = getAqiInfo(c.aqi);
                 return (
                   <div key={i} onClick={() => { setPosition([c.lat, c.lon]); setSearchedCity(c.name); window.scrollTo(0,0); }} 
-                  className={`flex justify-between items-center bg-muted/50 hover:bg-muted cursor-pointer p-3 rounded-xl border-l-4 ${aInfo.border || 'border-l-'+aInfo.bgClass.replace('bg-','')} transition-colors`}
+                  className={`flex justify-between items-center bg-muted/50 hover:bg-muted cursor-pointer p-4 rounded-2xl border-l-4 transition-colors`}
+                  style={{ borderLeftColor: aInfo.color }}
                   >
-                    <span className="font-semibold">{c.name}</span>
+                    <span className="font-semibold text-base">{c.name}</span>
                     <span className={`${aInfo.bgClass} text-white px-3 py-1 text-xs font-bold rounded-full`}>AQI {c.aqi}</span>
                   </div>
                 );
