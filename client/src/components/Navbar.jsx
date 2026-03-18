@@ -1,13 +1,16 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { Wind, LogOut, LayoutDashboard, Map as MapIcon, LogIn, UserPlus, GitCompare } from 'lucide-react';
+import { useTheme } from './ThemeProvider';
+import { Wind, LogOut, LayoutDashboard, Map as MapIcon, LogIn, UserPlus, GitCompare, Moon, Sun } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cn } from '../lib/utils';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -19,83 +22,81 @@ const Navbar = () => {
     return (
       <Link 
         to={to} 
-        style={{ 
-          display: 'flex', alignItems: 'center', gap: '6px', 
-          color: isActive ? 'var(--accent-color)' : 'var(--text-secondary)', 
-          fontWeight: isActive ? 600 : 500,
-          transition: 'all 0.2s',
-          padding: '8px 12px',
-          borderRadius: '12px',
-          background: isActive ? 'rgba(16, 185, 129, 0.1)' : 'transparent'
-        }} 
-        onMouseOver={e => !isActive && (e.currentTarget.style.color = 'var(--text-primary)')} 
-        onMouseOut={e => !isActive && (e.currentTarget.style.color = 'var(--text-secondary)')}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors",
+          isActive 
+            ? "bg-primary/10 text-primary" 
+            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+        )}
       >
-        <Icon size={18} /> {children}
+        <Icon size={18} /> <span className="hidden sm:inline">{children}</span>
       </Link>
     );
   };
 
   return (
-    <motion.nav 
+    <motion.header 
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-      className="glass-panel" 
-      style={{
-        position: 'fixed', top: '15px', left: '50%', transform: 'translateX(-50%)',
-        width: 'calc(100% - 40px)', maxWidth: '1200px', height: '65px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 24px', zIndex: 1000
-      }}
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-7xl h-16 rounded-2xl border bg-background/60 backdrop-blur-xl shadow-sm supports-[backdrop-filter]:bg-background/60"
     >
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.4rem' }}>
-          <div style={{ background: 'linear-gradient(135deg, #10b981, #3b82f6)', padding: '6px', borderRadius: '10px', display: 'flex' }}>
-            <Wind color="#fff" size={24} />
-          </div>
-          <span style={{ fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--text-primary)' }}>AQI Tushar</span>
-        </Link>
-      </div>
-      
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center' }}>
-        <NavLink to="/" icon={MapIcon}>Map</NavLink>
-        <NavLink to="/compare" icon={GitCompare}>Compare</NavLink>
-        <NavLink to="/dashboard" icon={LayoutDashboard}>Dashboard</NavLink>
-      </div>
-
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-        {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-secondary)', padding: '5px 12px', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
-              <img 
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
-                alt="user avatar" 
-                style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#f1f5f9' }} 
-              />
-              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{user.username}</span>
+      <nav className="flex items-center justify-between h-full px-4 md:px-6">
+        <div className="flex items-center">
+          <Link to="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
+            <div className="bg-gradient-to-tr from-emerald-500 to-blue-500 p-1.5 rounded-lg">
+              <Wind className="text-white w-5 h-5" />
             </div>
-            <button 
-              onClick={handleLogout} 
-              style={{ padding: '8px', borderRadius: '10px', color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)' }}
-              onMouseOver={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-              onMouseOut={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 16px', borderRadius: '12px', fontWeight: 600, color: 'var(--text-primary)', border: '1px solid var(--glass-border)', background: 'var(--bg-secondary)' }}>
-              <LogIn size={16} /> Login
-            </Link>
-            <Link to="/register" style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 16px', borderRadius: '12px', fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg, var(--accent-color), var(--accent-secondary))', boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.39)' }}>
-              <UserPlus size={16} /> Sign Up
-            </Link>
-          </div>
-        )}
-      </div>
-    </motion.nav>
+            <span className="hidden xs:inline-block">AQI Tracker</span>
+          </Link>
+        </div>
+        
+        <div className="flex items-center justify-center gap-1 md:gap-2 mx-auto absolute left-1/2 -translate-x-1/2">
+          <NavLink to="/" icon={MapIcon}>Map</NavLink>
+          <NavLink to="/compare" icon={GitCompare}>Compare</NavLink>
+          <NavLink to="/dashboard" icon={LayoutDashboard}>Dashboard</NavLink>
+        </div>
+
+        <div className="flex items-center gap-2 ml-auto">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Toggle Theme"
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
+          {user ? (
+            <div className="hidden sm:flex items-center gap-3 ml-2">
+              <div className="flex items-center gap-2 bg-secondary/50 border px-2 py-1 rounded-full">
+                <img 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
+                  alt="Avatar" 
+                  className="w-6 h-6 rounded-full bg-background" 
+                />
+                <span className="text-sm font-semibold pr-2">{user.username}</span>
+              </div>
+              <button 
+                onClick={handleLogout} 
+                className="p-2 rounded-xl text-destructive hover:bg-destructive/10 transition-colors"
+                title="Log out"
+              >
+                <LogOut size={18} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 ml-2">
+              <Link to="/login" className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium border rounded-xl hover:bg-secondary transition-colors">
+                <LogIn size={16} /> Login
+              </Link>
+              <Link to="/register" className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:opacity-90 shadow-sm transition-opacity">
+                <UserPlus size={16} /> <span className="hidden sm:inline">Sign Up</span>
+              </Link>
+            </div>
+          )}
+        </div>
+      </nav>
+    </motion.header>
   );
 };
 

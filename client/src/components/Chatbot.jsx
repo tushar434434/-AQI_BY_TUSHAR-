@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send } from 'lucide-react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { askChatbot } from '../services/api';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,8 +21,8 @@ const Chatbot = () => {
     setIsLoading(true);
 
     try {
-      const res = await axios.post(`${API_URL}/api/chat`, { message: userMessage.text });
-      const botMessage = { text: res.data.reply, sender: 'bot' };
+      const res = await askChatbot(userMessage.text);
+      const botMessage = { text: res.reply, sender: 'bot' };
       setMessages(prev => [...prev, botMessage]);
     } catch (err) {
       setMessages(prev => [...prev, { text: "Sorry, I'm having trouble connecting right now.", sender: 'bot' }]);
@@ -36,20 +34,10 @@ const Chatbot = () => {
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        className="glass-panel"
-        style={{
-          position: 'fixed', bottom: '30px', right: '30px',
-          width: '60px', height: '60px', borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 8px 32px rgba(0, 230, 118, 0.3)',
-          background: 'linear-gradient(135deg, var(--accent-color), #00b0ff)',
-          color: '#000', zIndex: 1000,
-          transition: 'transform 0.2s'
-        }}
-        onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'}
-        onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+        className="fixed bottom-8 right-8 w-14 h-14 rounded-full flex items-center justify-center bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform z-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label="Open Chatbot"
       >
-        <MessageSquare size={28} />
+        <MessageSquare size={26} />
       </button>
 
       <AnimatePresence>
@@ -58,64 +46,57 @@ const Chatbot = () => {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="glass-panel"
-            style={{
-              position: 'fixed', bottom: '100px', right: '30px',
-              width: '350px', height: '500px', zIndex: 1000,
-              display: 'flex', flexDirection: 'column', overflow: 'hidden'
-            }}
+            className="fixed bottom-28 right-8 w-[350px] h-[500px] z-50 flex flex-col overflow-hidden rounded-2xl border bg-background shadow-xl"
           >
-            <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <MessageSquare className="gradient-text" size={20} />
-                <h3 style={{ margin: 0, fontSize: '1.1rem' }}>AeroBot</h3>
+            <div className="bg-muted px-4 py-3 flex justify-between items-center border-b">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="text-primary" size={20} />
+                <h3 className="m-0 text-base font-semibold">AeroBot</h3>
               </div>
-              <button onClick={() => setIsOpen(false)} style={{ color: 'var(--text-secondary)' }}>
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md"
+              >
                 <X size={20} />
               </button>
             </div>
 
-            <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-background/50">
               {messages.map((msg, i) => (
-                <div key={i} style={{ 
-                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                  backgroundColor: msg.sender === 'user' ? 'rgba(0, 230, 118, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                  border: `1px solid ${msg.sender === 'user' ? 'rgba(0, 230, 118, 0.3)' : 'var(--glass-border)'}`,
-                  padding: '10px 15px', borderRadius: '12px', maxWidth: '85%',
-                  borderBottomRightRadius: msg.sender === 'user' ? '0' : '12px',
-                  borderBottomLeftRadius: msg.sender === 'bot' ? '0' : '12px',
-                  color: msg.sender === 'user' ? '#fff' : 'var(--text-secondary)'
-                }}>
+                <div 
+                  key={i} 
+                  className={`px-4 py-2.5 rounded-2xl max-w-[85%] text-sm ${
+                    msg.sender === 'user' 
+                      ? 'self-end bg-primary text-primary-foreground rounded-br-sm' 
+                      : 'self-start bg-muted text-foreground border rounded-bl-sm'
+                  }`}
+                >
                   {msg.text}
                 </div>
               ))}
               {isLoading && (
-                <div style={{ alignSelf: 'flex-start', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  Typing...
+                <div className="self-start text-muted-foreground text-sm flex gap-1 items-center bg-muted px-3 py-2 rounded-2xl rounded-bl-sm">
+                  <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" />
+                  <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '0.2s' }} />
                 </div>
               )}
             </div>
 
-            <form onSubmit={sendMessage} style={{ padding: '15px', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '10px' }}>
+            <form onSubmit={sendMessage} className="p-3 border-t bg-background flex gap-2">
               <input 
                 type="text" 
-                value={input} onChange={e => setInput(e.target.value)}
+                value={input} 
+                onChange={e => setInput(e.target.value)}
                 placeholder="Ask about AQI..."
-                style={{ 
-                  flex: 1, padding: '10px 15px', borderRadius: '20px', 
-                  border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', 
-                  color: '#fff', outline: 'none' 
-                }}
+                className="flex h-10 w-full rounded-full border border-input bg-muted/50 px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               />
               <button 
                 type="submit"
-                style={{ 
-                  width: '40px', height: '40px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg, var(--accent-color), #00b0ff)',
-                  color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}
+                disabled={!input.trim()}
+                className="w-10 h-10 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <Send size={18} style={{ marginLeft: '-2px' }} />
+                <Send size={16} className="-ml-0.5" />
               </button>
             </form>
           </motion.div>

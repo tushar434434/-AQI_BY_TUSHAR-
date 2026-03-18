@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { motion } from 'framer-motion';
-import { Wind } from 'lucide-react';
+import { Wind, Loader2 } from 'lucide-react';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -29,67 +29,59 @@ const Login = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+    <div className="flex justify-center items-center min-h-[80vh]">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="glass-panel" 
-        style={{ padding: '40px', width: '100%', maxWidth: '400px' }}
+        className="glass rounded-2xl p-8 w-full max-w-sm"
       >
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <Wind className="gradient-text" size={48} style={{ margin: '0 auto 10px' }} />
-          <h2 style={{ fontSize: '2rem', marginBottom: '10px' }}>Welcome Back</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Log in to monitor air quality</p>
+        <div className="text-center mb-8">
+          <div className="bg-primary/10 text-primary w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4">
+            <Wind size={32} />
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight mb-2">Welcome Back</h2>
+          <p className="text-muted-foreground text-sm">Log in to monitor air quality</p>
         </div>
         
         {error && (
-          <div style={{ backgroundColor: 'rgba(255, 61, 0, 0.1)', color: 'var(--danger)', padding: '10px', borderRadius: '8px', marginBottom: '20px', textAlign: 'center', border: '1px solid rgba(255, 61, 0, 0.3)' }}>
+          <div className="bg-destructive/10 text-destructive border border-destructive/20 text-sm font-medium p-3 rounded-lg mb-6 text-center">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Username</label>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Username</label>
             <input 
               type="text" 
-              value={username} onChange={e => setUsername(e.target.value)} required 
-              style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: '#fff', outline: 'none', transition: 'border-color 0.2s' }}
-              onFocus={e => e.target.style.borderColor = 'var(--accent-color)'}
-              onBlur={e => e.target.style.borderColor = 'var(--glass-border)'}
+              value={username} 
+              onChange={e => setUsername(e.target.value)} 
+              required 
+              className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Password</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Password</label>
             <input 
               type="password" 
-              value={password} onChange={e => setPassword(e.target.value)} required 
-              style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: '#fff', outline: 'none', transition: 'border-color 0.2s' }}
-              onFocus={e => e.target.style.borderColor = 'var(--accent-color)'}
-              onBlur={e => e.target.style.borderColor = 'var(--glass-border)'}
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              required 
+              className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
             />
           </div>
           <button 
             type="submit" 
             disabled={isLoading}
-            style={{ 
-              marginTop: '10px', padding: '14px', borderRadius: '8px', 
-              background: 'linear-gradient(135deg, var(--accent-color), #00b0ff)', 
-              color: '#000', fontWeight: 'bold', fontSize: '1rem', 
-              opacity: isLoading ? 0.7 : 1, transition: 'transform 0.1s, box-shadow 0.2s' 
-            }}
-            onMouseOver={e => !isLoading && (e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 230, 118, 0.5)')}
-            onMouseOut={e => e.currentTarget.style.boxShadow = 'none'}
-            onMouseDown={e => !isLoading && (e.currentTarget.style.transform = 'scale(0.98)')}
-            onMouseUp={e => !isLoading && (e.currentTarget.style.transform = 'scale(1)')}
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-2"
           >
-            {isLoading ? 'Logging gently...' : 'Log In'}
+            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...</> : 'Log In'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Don't have an account? <Link to="/register" style={{ color: 'var(--accent-color)', fontWeight: 600 }}>Sign up</Link>
+        <p className="text-center mt-6 text-sm text-muted-foreground">
+          Don't have an account? <Link to="/register" className="text-primary font-medium hover:underline">Sign up</Link>
         </p>
       </motion.div>
     </div>
